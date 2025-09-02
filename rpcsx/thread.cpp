@@ -39,8 +39,9 @@ static auto setContext = [] {
 
 static __attribute__((no_stack_protector)) void
 handleSigSys(int sig, siginfo_t *info, void *ucontext) {
-  if (auto hostFs = _readgsbase_u64()) {
-    _writefsbase_u64(hostFs);
+  uint64_t hostFs = 0;
+  if (syscall(SYS_arch_prctl, ARCH_GET_GS, &hostFs) == 0 && hostFs) {
+    syscall(SYS_arch_prctl, ARCH_SET_FS, hostFs);
   }
 
   // rx::printStackTrace(reinterpret_cast<ucontext_t *>(ucontext),
@@ -58,13 +59,14 @@ handleSigSys(int sig, siginfo_t *info, void *ucontext) {
 
   thread = orbis::g_currentThread;
   thread->context = prevContext;
-  _writefsbase_u64(thread->fsBase);
+  syscall(SYS_arch_prctl, ARCH_SET_FS, thread->fsBase);
 }
 
 __attribute__((no_stack_protector)) static void
 handleSigUser(int sig, siginfo_t *info, void *ucontext) {
-  if (auto hostFs = _readgsbase_u64()) {
-    _writefsbase_u64(hostFs);
+  uint64_t hostFs;
+  if (syscall(SYS_arch_prctl, ARCH_GET_GS, &hostFs) == 0 && hostFs) {
+    syscall(SYS_arch_prctl, ARCH_SET_FS, hostFs);
   }
 
   auto context = reinterpret_cast<ucontext_t *>(ucontext);
@@ -128,7 +130,7 @@ handleSigUser(int sig, siginfo_t *info, void *ucontext) {
   }
 
   if (inGuestCode) {
-    _writefsbase_u64(thread->fsBase);
+    syscall(SYS_arch_prctl, ARCH_SET_FS, thread->fsBase);
   }
 }
 
@@ -265,12 +267,13 @@ void rx::thread::setupThisThread() {
 void rx::thread::invoke(orbis::Thread *thread) {
   orbis::g_currentThread = thread;
 
-  std::uint64_t hostFs = _readfsbase_u64();
-  _writegsbase_u64(hostFs);
+  std::uint64_t hostFs;
+  syscall(SYS_arch_prctl, ARCH_GET_FS, &hostFs);
+  syscall(SYS_arch_prctl, ARCH_SET_GS, hostFs);
 
-  _writefsbase_u64(thread->fsBase);
+  syscall(SYS_arch_prctl, ARCH_SET_FS, thread->fsBase);
   auto context = reinterpret_cast<ucontext_t *>(thread->context);
 
   setContext(context->uc_mcontext);
-  _writefsbase_u64(hostFs);
+  syscall(SYS_arch_prctl, ARCH_SET_FS, hostFs);
 }
