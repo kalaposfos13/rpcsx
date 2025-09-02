@@ -1,5 +1,5 @@
 <div align="center">
-   
+
 # RPCSX
 *An experimental PlayStation 4 and PlayStation 5 emulator for Linux written in C++*
 
