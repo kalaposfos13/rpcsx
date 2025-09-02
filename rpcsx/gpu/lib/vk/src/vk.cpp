@@ -419,8 +419,8 @@ void vk::Context::createDevice(VkSurfaceKHR surface, int gpuIndex,
 
   rx::dieIf(!storage_16bit.uniformAndStorageBuffer16BitAccess,
             "16-bit storage is unsupported by this GPU");
-  rx::dieIf(!float16_int8.shaderFloat16,
-            "16-bit float is unsupported by this GPU");
+  // rx::dieIf(!float16_int8.shaderFloat16,
+  //           "16-bit float is unsupported by this GPU");
   rx::dieIf(!phyDevFeatures12.bufferDeviceAddress,
             "bufferDeviceAddress is unsupported by this GPU");
   rx::dieIf(!phyDevFeatures12.descriptorIndexing,
