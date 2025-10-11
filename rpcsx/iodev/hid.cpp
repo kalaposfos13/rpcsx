@@ -142,6 +142,21 @@ static orbis::ErrorCode hid_ioctl(orbis::File *file, std::uint64_t request,
     break;
   }
 
+  case 0x80104821: {
+    struct SetLightbarArgs {
+      orbis::uint32_t hidId;
+      orbis::uint32_t unk0;
+      orbis::ptr<orbis::uint8_t[3]> color;
+    };
+    auto args = *reinterpret_cast<SetLightbarArgs *>(argp);
+    auto color_str = std::format("r: {:03} g: {:03} b: {:03}", (*args.color)[0], (*args.color)[1], (*args.color)[2]);
+    ORBIS_LOG_NOTICE("hid ioctl update lightbar", args.hidId, args.unk0, color_str);
+    if (auto gpu = amdgpu::DeviceCtl{orbis::g_context->gpuDevice}) {
+      thread->retval[0] = 1;
+    }
+    return {};
+  }
+
   default:
     ORBIS_LOG_FATAL("Unhandled hid ioctl", request);
     thread->where();
